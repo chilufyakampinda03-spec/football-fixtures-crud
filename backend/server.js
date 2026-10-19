@@ -1,4 +1,36 @@
-﻿// 1. GET a single record by ID
+﻿const express = require('express');
+const cors = require('cors');
+const db = require('./db');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// 0. GET all records & POST a new record
+app.get('/api/sports', (req, res) => {
+  db.all(`SELECT * FROM sports`, [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+app.post('/api/sports', (req, res) => {
+  const { player_name, position, jersey_number } = req.body;
+  db.run(
+    `INSERT INTO sports (player_name, position, jersey_number) VALUES (?, ?, ?)`,
+    [player_name, position, jersey_number],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ id: this.lastID, player_name, position, jersey_number });
+    }
+  );
+});
+
+// 1. GET a single record by ID
 app.get('/api/sports/:id', (req, res) => {
   const id = req.params.id;
   db.get(`SELECT * FROM sports WHERE id = ?`, [id], (err, row) => {
@@ -43,4 +75,10 @@ app.delete('/api/sports/:id', (req, res) => {
     }
     res.json({ message: "Deleted successfully", deletedID: id });
   });
+});
+
+// Start Server
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
