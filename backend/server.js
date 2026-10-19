@@ -2,19 +2,15 @@
 const cors = require('cors');
 const db = require('./db');
 const app = express();
-
 app.use(cors());
 app.use(express.json());
-
 const PORT = process.env.PORT || 3000;
-
 app.get('/api/sports', (req, res) => {
     db.all('SELECT * FROM sports', [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
-
 app.get('/api/sports/:id', (req, res) => {
     const { id } = req.params;
     db.get('SELECT * FROM sports WHERE id = ?', [id], (err, row) => {
@@ -23,7 +19,6 @@ app.get('/api/sports/:id', (req, res) => {
         res.json(row);
     });
 });
-
 app.post('/api/sports', (req, res) => {
     const { player_name, position, jersey_number } = req.body;
     const query = 'INSERT INTO sports (player_name, position, jersey_number) VALUES (?, ?, ?)';
@@ -32,7 +27,6 @@ app.post('/api/sports', (req, res) => {
         res.status(201).json({ id: this.lastID, player_name, position, jersey_number });
     });
 });
-
 app.put('/api/sports/:id', (req, res) => {
     const { id } = req.params;
     const { player_name, position, jersey_number } = req.body;
@@ -43,7 +37,6 @@ app.put('/api/sports/:id', (req, res) => {
         res.json({ message: 'Updated successfully' });
     });
 });
-
 app.delete('/api/sports/:id', (req, res) => {
     const { id } = req.params;
     db.run('DELETE FROM sports WHERE id = ?', [id], function(err) {
@@ -52,7 +45,6 @@ app.delete('/api/sports/:id', (req, res) => {
         res.json({ message: 'Deleted successfully' });
     });
 });
-
 app.listen(PORT, () => {
     console.log('Server running on port ' + PORT);
 });
