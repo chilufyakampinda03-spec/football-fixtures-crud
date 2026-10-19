@@ -1,12 +1,16 @@
 ﻿const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./db');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 0. GET all records & POST a new record
+// Serve static frontend files from the frontend folder
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// 0. GET all records
 app.get('/api/sports', (req, res) => {
   db.all(`SELECT * FROM sports`, [], (err, rows) => {
     if (err) {
@@ -16,6 +20,7 @@ app.get('/api/sports', (req, res) => {
   });
 });
 
+// POST a new record
 app.post('/api/sports', (req, res) => {
   const { player_name, position, jersey_number } = req.body;
   db.run(
