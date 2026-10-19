@@ -1,80 +1,82 @@
 ﻿const API_URL = 'https://football-fixtures-crud.onrender.com/api/sports';
-const sportForm = document.getElementById('sportForm');
-const sportTableBody = document.getElementById('sportTableBody');
-const formTitle = document.getElementById('formTitle');
-const submitBtn = document.getElementById('submitBtn');
-const cancelBtn = document.getElementById('cancelBtn');
-const recordIdInput = document.getElementById('recordId');
-const playerNameInput = document.getElementById('player_name');
-const positionInput = document.getElementById('position');
-const jerseyNumberInput = document.getElementById('jersey_number');
 
-async function fetchRecords() {
+// Fetch and display all records on load
+async function loadSports() {
     try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        sportTableBody.innerHTML = '';
+        const tbody = document.getElementById('sportsTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
         data.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = 
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td class="actions">
-                    <button class="btn-warning" onclick="editRecord(, '', '', '')">Edit</button>
-                    <button class="btn-danger" onclick="deleteRecord()">Delete</button>
-                </td>
-            ;
-            sportTableBody.appendChild(row);
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.id}</td>
+                    <td>${item.player_name || ''}</td>
+                    <td>${item.position || ''}</td>
+                    <td>${item.jersey_number || ''}</td>
+                    <td>
+                        <button onclick="editRecord(${item.id}, '${item.player_name}', '${item.position}', ${item.jersey_number})">Edit</button>
+                        <button onclick="deleteRecord(${item.id})">Delete</button>
+                    </td>
+                </tr>
+            `;
         });
-    } catch (error) { console.error('Error fetching records:', error); }
-}
-
-sportForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = recordIdInput.value;
-    const payload = {
-        player_name: playerNameInput.value,
-        position: positionInput.value,
-        jersey_number: jerseyNumberInput.value ? parseInt(jerseyNumberInput.value) : null
-    };
-    try {
-        if (id) {
-            await fetch(${API_URL}/, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        } else {
-            await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        }
-        resetForm();
-        fetchRecords();
-    } catch (error) { console.error('Error saving record:', error); }
-});
-
-function editRecord(id, name, position, jersey) {
-    recordIdInput.value = id;
-    playerNameInput.value = name;
-    positionInput.value = position;
-    jerseyNumberInput.value = jersey;
-    formTitle.innerText = Edit Record #;
-    submitBtn.innerText = 'Update Record';
-    cancelBtn.style.display = 'inline-block';
-}
-
-async function deleteRecord(id) {
-    if (confirm('Are you sure you want to delete this record?')) {
-        try {
-            await fetch(${API_URL}/, { method: 'DELETE' });
-            fetchRecords();
-        } catch (error) { console.error('Error deleting record:', error); }
+    } catch (error) {
+        console.error('Error loading records:', error);
     }
 }
 
-function resetForm() {
-    recordIdInput.value = '';
-    sportForm.reset();
-    formTitle.innerText = 'Add New Record';
-    submitBtn.innerText = 'Save Record';
-    cancelBtn.style.display = 'none';
+// Handle Form Submission (Create or Update)
+const form = document.getElementById('sportsForm');
+if (form) {
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('recordId').value;
+        const player_name = document.getElementById('playerName').value;
+        const position = document.getElementById('position').value;
+        const jersey_number = document.getElementById('jersey_number').value;
+
+        const payload = { player_name, position, jersey_number: jersey_number ? parseInt(jersey_number) : null };
+
+        if (id) {
+            // Update existing record (PUT)
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            // Create new record (POST)
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+
+        form.reset();
+        document.getElementById('recordId').value = '';
+        loadSports();
+    });
 }
 
-fetchRecords();
+// Fill form for editing
+function editRecord(id, name, pos, jersey) {
+    document.getElementById('recordId').value = id;
+    document.getElementById('playerName').value = name;
+    document.getElementById('position').value = pos;
+    document.getElementById('jersey_number').value = jersey;
+}
+
+// Delete a record (DELETE)
+async function deleteRecord(id) {
+    if (confirm('Are you sure you want to delete this record?')) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        loadSports();
+    }
+}
+
+// Load data when the page opens
+loadSports();
