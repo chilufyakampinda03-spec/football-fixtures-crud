@@ -1,5 +1,18 @@
-﻿db.serialize(() => {
-  // 1. Create the table if it doesn't exist yet
+﻿const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+
+// Connect to SQLite database
+const dbPath = path.resolve(__dirname, 'database.sqlite');
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('Error opening database', err.message);
+  } else {
+    console.log('Connected to the SQLite database.');
+  }
+});
+
+// Create table and auto-seed if empty
+db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS sports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,7 +28,6 @@
       return;
     }
 
-    // 2. Check if the table is empty and insert initial records automatically
     db.get(`SELECT COUNT(*) as count FROM sports`, (err, row) => {
       if (err) return;
 
@@ -46,3 +58,5 @@
     });
   });
 });
+
+module.exports = db;
