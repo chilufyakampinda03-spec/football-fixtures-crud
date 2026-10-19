@@ -1,30 +1,59 @@
-﻿const sqlite3 = require('sqlite3').verbose();
+﻿const express = require('express');
+const cors = require('cors');
 const path = require('path');
+const db = require('./db');
 
-// Connect to SQLite database file (named sports.db as per your project theme)
-const dbFile = path.join(__dirname, 'sports.db');
-const db = new sqlite3.Database(dbFile, (err) => {
-    if (err) {
-        console.error('Error opening database', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        
-        // Create the sports table with the exact fields required
-        db.run(`CREATE TABLE IF NOT EXISTS sports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            player_name TEXT,
-            position TEXT,
-            jersey_number INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`, (err) => {
-            if (err) {
-                console.error("Error creating table:", err.message);
-            } else {
-                console.log("Sports table verified/created successfully.");
-            }
-        });
-    }
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// Safely serve static frontend files if the folder exists
+const frontendPath = path.join(__dirname, '../frontend');
+app.use(express.static(frontendPath));
+
+// API Routes for Sports
+app.get('/api/sports', (req, res) => {
+    db.all("SELECT * FROM sports", [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows);
+    });
 });
 
-module.exports = db;
+app.post('/api/sports', (req, res) => {
+    const { player_name, position, jersey_number } = req.body;
+    const query = `INSERT INTO sports (player_name, position, jersey_number) VALUES (?, ?, ?)`;
+    db.run(query, [player_name, position, jersey_number], function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ id: this.lastID, player_name, position, jersey_number });
+    });
+});
+
+app.put('/api/sports/:id', (req, res) => {
+    const { player_name, position, jersey_number } = req.body;
+    const query = `UPDATE sports SET player_name = ?, position = ?, jersey_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+    db.run(query, [player_name, position, jersey_number, req.params.id], function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ updated: this.changes });
+    });
+});
+
+app.delete('/api/sports/:id', (req, res) => {
+    db.run(`DELETE FROM sports WHERE id = ?`, req.params.id, function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ deleted: this.changes });
+    });
+});
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+});
