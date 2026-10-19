@@ -8,7 +8,6 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// GET all records
 app.get('/api/sports', (req, res) => {
     db.all('SELECT * FROM sports', [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -16,7 +15,6 @@ app.get('/api/sports', (req, res) => {
     });
 });
 
-// GET single record by ID
 app.get('/api/sports/:id', (req, res) => {
     const { id } = req.params;
     db.get('SELECT * FROM sports WHERE id = ?', [id], (err, row) => {
@@ -26,7 +24,6 @@ app.get('/api/sports/:id', (req, res) => {
     });
 });
 
-// POST create a record
 app.post('/api/sports', (req, res) => {
     const { player_name, position, jersey_number } = req.body;
     const query = 'INSERT INTO sports (player_name, position, jersey_number) VALUES (?, ?, ?)';
@@ -36,7 +33,6 @@ app.post('/api/sports', (req, res) => {
     });
 });
 
-// PUT update a record
 app.put('/api/sports/:id', (req, res) => {
     const { id } = req.params;
     const { player_name, position, jersey_number } = req.body;
@@ -48,7 +44,6 @@ app.put('/api/sports/:id', (req, res) => {
     });
 });
 
-// DELETE a record
 app.delete('/api/sports/:id', (req, res) => {
     const { id } = req.params;
     db.run('DELETE FROM sports WHERE id = ?', [id], function(err) {
@@ -59,5 +54,5 @@ app.delete('/api/sports/:id', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(Server running on port \);
+    console.log('Server running on port ' + PORT);
 });
