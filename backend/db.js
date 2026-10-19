@@ -1,12 +1,11 @@
 ﻿const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-
-const dbPath = path.join(__dirname, 'database.sqlite');
+const dbPath = path.join(__dirname, 'sports.db');
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error opening database', err.message);
     } else {
-        console.log('Connected to SQLite database.');
+        console.log('Connected to the SQLite database.');
         db.run(CREATE TABLE IF NOT EXISTS sports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             player_name TEXT,
@@ -17,5 +16,4 @@ const db = new sqlite3.Database(dbPath, (err) => {
         ));
     }
 });
-
 module.exports = db;
