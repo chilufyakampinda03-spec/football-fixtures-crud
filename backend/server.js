@@ -1,74 +1,63 @@
 ﻿const express = require('express');
-const mysql = require('mysql2/promise');
 const cors = require('cors');
-require('dotenv').config();
-
+const db = require('./db');
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
-
-app.get('/api/sports', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM sports');
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/sports/:id', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM sports WHERE id = ?', [req.params.id]);
-        if (rows.length === 0) return res.status(404).json({ message: 'Record not found' });
-        res.json(rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/sports', async (req, res) => {
-    try {
-        const { player_name, position, jersey_number } = req.body;
-        const [result] = await pool.query(
-            'INSERT INTO sports (player_name, position, jersey_number) VALUES (?, ?, ?)',
-            [player_name || null, position || null, jersey_number || null]
-        );
-        res.status(201).json({ id: result.insertId, player_name, position, jersey_number });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/sports/:id', async (req, res) => {
-    try {
-        const { player_name, position, jersey_number } = req.body;
-        await pool.query(
-            'UPDATE sports SET player_name = ?, position = ?, jersey_number = ? WHERE id = ?',
-            [player_name || null, position || null, jersey_number || null, req.params.id]
-        );
-        res.json({ message: 'Record updated successfully' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/sports/:id', async (req, res) => {
-    try {
-        await pool.query('DELETE FROM sports WHERE id = ?', [req.params.id]);
-        res.json({ message: 'Record deleted successfully' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 const PORT = process.env.PORT || 3000;
+
+// GET all records
+app.get('/api/sports', (req, res) => {
+    db.all('SELECT * FROM sports', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// GET single record by ID
+app.get('/api/sports/:id', (req, res) => {
+    const { id } = req.params;
+    db.get('SELECT * FROM sports WHERE id = ?', [id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) return res.status(404).json({ error: 'Record not found' });
+        res.json(row);
+    });
+});
+
+// POST create a record
+app.post('/api/sports', (req, res) => {
+    const { player_name, position, jersey_number } = req.body;
+    const query = 'INSERT INTO sports (player_name, position, jersey_number) VALUES (?, ?, ?)';
+    db.run(query, [player_name || null, position || null, jersey_number || null], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ id: this.lastID, player_name, position, jersey_number });
+    });
+});
+
+// PUT update a record
+app.put('/api/sports/:id', (req, res) => {
+    const { id } = req.params;
+    const { player_name, position, jersey_number } = req.body;
+    const query = 'UPDATE sports SET player_name = ?, position = ?, jersey_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+    db.run(query, [player_name || null, position || null, jersey_number || null, id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'Record not found' });
+        res.json({ message: 'Updated successfully' });
+    });
+});
+
+// DELETE a record
+app.delete('/api/sports/:id', (req, res) => {
+    const { id } = req.params;
+    db.run('DELETE FROM sports WHERE id = ?', [id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'Record not found' });
+        res.json({ message: 'Deleted successfully' });
+    });
+});
+
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(Server running on port \);
 });
